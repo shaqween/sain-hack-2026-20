@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+id_ed25519
+api.token
+llm.key
+yandex_forms_secret.txt
+.env
+

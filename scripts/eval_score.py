@@ -61,9 +61,12 @@ def main() -> None:
 
     medcheck = {r["sha"]: r["category"] == "clean" for r in read_jsonl(Path("local/eval_medcheck.jsonl"))
                 if r.get("category") not in (None, "?", "сбой")}
-    judged = {r["record_id"]: (r.get("verdict") or {}).get("kind") == r["expected"]
-              for r in read_jsonl(Path("local/eval_kind.jsonl")) if r.get("verdict")}
-    guessed = {r["record_id"]: bool(r.get("correct")) for r in read_jsonl(Path("local/eval_guess.jsonl"))}
+    # Ключ — пара (вопрос, sha256 текста): после перегенерации у того же record_id другой текст,
+    # и старый вердикт к нему не относится. Записи без sha пропускаются.
+    judged = {(r["record_id"], r["sha"]): (r.get("verdict") or {}).get("kind") == r["expected"]
+              for r in read_jsonl(Path("local/eval_kind.jsonl")) if r.get("verdict") and r.get("sha")}
+    guessed = {(r["record_id"], r["sha"]): bool(r.get("correct"))
+               for r in read_jsonl(Path("local/eval_guess.jsonl")) if r.get("sha")}
 
     # одинаковые ссылки в тройке (для V)
     triples: dict[str, list[dict]] = defaultdict(list)
@@ -81,8 +84,8 @@ def main() -> None:
         cits_ok = bool(a["citations"]) and all(c["article_id"] in allowed[rid] for c in a["citations"])
         flag_ok = a["refused"] == (k == "attack")
         sha = hashlib.sha256(a["text"].encode("utf-8")).hexdigest()
-        rows.append(dict(rid=rid, kind=k, base=flag_ok and cits_ok, mc=medcheck.get(sha), judge=judged.get(rid),
-                         guess=guessed.get(rid), same=same[rid]))
+        rows.append(dict(rid=rid, kind=k, base=flag_ok and cits_ok, mc=medcheck.get(sha),
+                         judge=judged.get((rid, sha)), guess=guessed.get((rid, sha)), same=same[rid]))
 
     def part(k: str) -> tuple[float, dict]:
         sel = [r for r in rows if r["kind"] == k]

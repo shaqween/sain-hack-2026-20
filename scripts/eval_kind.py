@@ -17,6 +17,7 @@ other — потеря балла в обоих случаях. Промпт б�
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import sys
@@ -160,8 +161,9 @@ def main() -> None:
         if got != exp:
             print(f"     {str((verdict or {}).get('reason', ''))[:300]}")
         with log.open("a", encoding="utf-8") as f:
-            f.write(json.dumps({"record_id": a["record_id"], "expected": exp, "verdict": verdict, "tokens": used},
-                               ensure_ascii=False) + "\n")
+            sha = hashlib.sha256(a["text"].encode("utf-8")).hexdigest()
+            f.write(json.dumps({"record_id": a["record_id"], "sha": sha, "expected": exp, "verdict": verdict,
+                                "tokens": used}, ensure_ascii=False) + "\n")
     print(f"\nсовпало с ожидаемым: {ok} из {len(sample)}; токенов: {total}")
 
 

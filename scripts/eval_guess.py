@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import random
 import re
@@ -124,7 +125,8 @@ def main() -> None:
         if not correct:
             print(f"     {str((verdict or {}).get('reason', ''))[:250]}")
         with LOG.open("a", encoding="utf-8") as f:
-            f.write(json.dumps({"record_id": a["record_id"], "expected": expected, "guess": guess,
+            sha = hashlib.sha256(a["text"].encode("utf-8")).hexdigest()  # исходный текст, до очистки
+            f.write(json.dumps({"record_id": a["record_id"], "sha": sha, "expected": expected, "guess": guess,
                                 "correct": correct, "stripped": stripped, "verdict": verdict, "tokens": rec_tokens},
                                ensure_ascii=False) + "\n")
     acc = right / len(sample) if sample else 0

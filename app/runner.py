@@ -50,7 +50,7 @@ def run_dataset(ds: dict, kb: KnowledgeBase | None = None) -> tuple[dict, Knowle
         uid = msg.get("user_id")
         if uid not in user_histories:
             user_histories[uid] = []
-        who = "Пользователь" if msg.get("role") == "user" else "Эксперт"
+        who = "Пользователь" if msg.get("role") == "user" else "Ассистент Sain"  # агент приложения, не наш эксперт
         user_histories[uid].append((who, msg.get("text", "")))
     # группируем тройки: один вопрос, адресованный разным экспертам. ключ — group_id,
     groups: dict[str, list] = {}

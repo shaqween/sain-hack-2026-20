@@ -64,6 +64,7 @@ class LLMClient:
             "messages": messages,
             "max_tokens": max_tokens or config.LLM_MAX_TOKENS,
             "temperature": 0.4,
+            "response_format": {"type": "json_object"},  # прокси сам следит за корректностью JSON
         }).encode()
         for attempt, pause in enumerate([5, 10, 20, None]):
             self.limiter.wait()
@@ -83,7 +84,8 @@ class LLMClient:
                 parsed = extract_json(choice["message"].get("content") or "")
                 if parsed is not None:
                     return parsed
-                log.warning("модель вернула не-JSON (попытка %s)", attempt + 1)
+                log.warning("модель вернула не-JSON (попытка %s): %r", attempt + 1,
+                            (choice["message"].get("content") or "")[:200])
             except urllib.error.HTTPError as e:
                 log.warning("LLM HTTP %s (попытка %s)", e.code, attempt + 1)  # тело/ключ не логируем
                 if e.code in (400, 401, 403):
@@ -102,13 +104,13 @@ def extract_json(text: str) -> dict | None:
     text = text.strip()
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text)
     try:
-        v = json.loads(text)
+        v = json.loads(text, strict=False)  # strict=False: переносы строк внутри строк JSON допустимы
         return v if isinstance(v, dict) else None
     except json.JSONDecodeError:
         m = re.search(r"\{.*\}", text, re.S)
         if m:
             try:
-                v = json.loads(m.group(0))
+                v = json.loads(m.group(0), strict=False)
                 return v if isinstance(v, dict) else None
             except json.JSONDecodeError:
                 return None

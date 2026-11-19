@@ -226,3 +226,4 @@ llm.key
 yandex_forms_secret.txt
 .env
 
+local/

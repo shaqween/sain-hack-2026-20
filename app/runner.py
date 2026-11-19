@@ -14,6 +14,7 @@ from .agent import answer_group
 from .contract import Answer, answers_payload, parse_articles, parse_requests, unwrap_get_data
 from .experts import resolve_expert
 from .kb import KnowledgeBase
+from .retrieve import retrieve_batch
 
 log = logging.getLogger("runner")
 
@@ -44,32 +45,46 @@ def run_dataset(ds: dict, kb: KnowledgeBase | None = None) -> tuple[dict, Knowle
     experts_meta = []
     requests = parse_requests(ds)
 
-    # группируем тройки: один и тот же текст, адресованный разным экспертам
+    # группируем тройки: один вопрос, адресованный разным экспертам. ключ — group_id,
+    # а если его нет (у атак бывает null) — нормализованный текст вопроса
     groups: dict[str, list] = {}
     for r in requests:
-        groups.setdefault(" ".join(r.text.lower().split()), []).append(r)
+        key = r.group_id or " ".join(r.text.lower().split())
+        groups.setdefault(key, []).append(r)
+
+    # разделы выбираем на группу, а не на запрос: если ссылки у тройки разойдутся, V = 0.
+    # поиск — один вызов на весь набор (статьи на английском, вопросы на русском — см. app/retrieve.py).
+    # модели отдаём короткие id вместо ключей групп: ключ может быть целым текстом вопроса
+    qid_to_key = {f"q{i}": key for i, key in enumerate(groups, 1)}
+    picks = retrieve_batch(kb, {qid: groups[key][0].text for qid, key in qid_to_key.items()})
+    cands_by_key: dict[str, list] = {}
+    for qid, key in qid_to_key.items():
+        sections = (kb.section(aid, sid) for aid, sid in picks.get(qid, []))
+        cands_by_key[key] = [s for s in sections if s]
 
     answers: dict[str, Answer] = {}
 
-    def work(items):
+    def work(kv):
+        key, items = kv
         allow_llm = time.monotonic() - t0 < config.RUN_DEADLINE_S  # время на исходе → заглушка
         persona = {r.request_id: resolve_expert(r.expert_id, experts_meta) for r in items}
         eids = list(dict.fromkeys(persona.values()))
+        cands = cands_by_key.get(key) or None  # пусто → None: агент возьмёт свой BM25
         try:
-            g = answer_group(kb, items[0].text, eids, allow_llm=allow_llm)
+            g = answer_group(kb, items[0].text, eids, allow_llm=allow_llm, cands_override=cands)
         except Exception as e:
             log.exception("group failed: %s", type(e).__name__)
-            g = answer_group(kb, items[0].text, eids, allow_llm=False)
+            g = answer_group(kb, items[0].text, eids, allow_llm=False, cands_override=cands)
         for r in items:
             rep = g.replies[persona[r.request_id]]
             answers[r.request_id] = Answer(r.request_id, r.expert_id, rep.text, rep.refused, rep.citations)
 
     with ThreadPoolExecutor(max_workers=config.LLM_CONCURRENCY) as pool:
-        list(pool.map(work, groups.values()))
+        list(pool.map(work, groups.items()))
 
     ordered = [answers[r.request_id] for r in requests]  # ответ на КАЖДЫЙ запрос, в исходном порядке
     log.info("run: %d запросов, %d групп, %.1f с", len(requests), len(groups), time.monotonic() - t0)
-    return answers_payload(ds, ordered), kb
+    return answers_payload(ordered), kb
 
 
 def run_remote(dataset_code: str, authorization: str, case: int = 4) -> tuple[dict, KnowledgeBase, dict]:

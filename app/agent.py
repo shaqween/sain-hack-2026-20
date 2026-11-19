@@ -123,9 +123,12 @@ def _stub_reply(eid: str, is_attack: bool, main: Section, alt: Section) -> str:
 
 #главный метод
 def answer_group(kb: KnowledgeBase, text: str, expert_ids: list[str],
-                 history: list[tuple[str, str]] | None = None, allow_llm: bool = True) -> GroupResult:
+                 history: list[tuple[str, str]] | None = None, allow_llm: bool = True,
+                 cands_override: list[Section] | None = None) -> GroupResult:
     rule_kind = guard.check_input(text)
-    cands = _candidates(kb, text, need_alt=bool(rule_kind))
+    # cands_override — разделы, выбранные для группы заранее (runner → app/retrieve.py);
+    # без них — BM25 по тексту вопроса
+    cands = cands_override or _candidates(kb, text, need_alt=bool(rule_kind))
     res = GroupResult(attack_kind=rule_kind)
 
     data = llm.chat_json(_build_messages(text, expert_ids, cands, kb, rule_kind, history)) if allow_llm else None

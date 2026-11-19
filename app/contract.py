@@ -40,6 +40,7 @@ class Request:
     expert_id: str
     user_id: str = ""
     kind: str = ""
+    group_id: str = ""  # общий у тройки экспертов с одним вопросом; у атак бывает пустым
 
 
 @dataclass
@@ -91,10 +92,11 @@ def parse_requests(ds: dict) -> list[Request]:
     return [
         Request(
             request_id=str(r.get("record_id", r.get("id", ""))),  # record_id приоритет
-            text=str(r.get("text", "")),
+            text=str((r.get("utterance") or {}).get("text", "")),
             expert_id=str(r.get("expert_id", "")),
             user_id=str(r.get("user_id", "")),
             kind=str(r.get("kind", "")),
+            group_id=str(r.get("group_id") or ""),
         )
         for r in raw
     ]

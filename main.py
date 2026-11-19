@@ -64,7 +64,7 @@ def experts() -> list[dict]:
 #экран 2: разговор
 
 class ChatIn(BaseModel):
-    expert_id: str = Field(description="somnologist | biohacker | nutritionist")
+    expert_id: str = Field(description="clinician | biohacker | nutritionist")
     message: str = Field(min_length=1, max_length=2000)
     session_id: str | None = None
 

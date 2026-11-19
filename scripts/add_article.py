@@ -50,9 +50,9 @@ with open(os.path.join(ROOT, "data", "demo_base.json"), encoding="utf-8") as f:
 kb.add_article(art)
 t_index = time.perf_counter() - t0
 q = args.question or f"{art.sections[0].title}: что об этом известно?"
-g = answer_group(kb, q, ["somnologist"])
+g = answer_group(kb, q, ["clinician"])
 t_total = time.perf_counter() - t0
-cited = any(a == art.article_id for a, _ in g.replies["somnologist"].citations)
+cited = any(a == art.article_id for a, _ in g.replies["clinician"].citations)
 print(f"индекс перестроен за {t_index*1000:.1f} мс; первый ответ {'ССЫЛАЕТСЯ' if cited else 'не ссылается'} "
       f"на новую статью через {t_total*1000:.1f} мс после добавления (вопрос: «{q}»)")
 

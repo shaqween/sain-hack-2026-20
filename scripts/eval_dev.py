@@ -75,7 +75,8 @@ def use_picks_cache(path: Path) -> None:
 
     Разделы, выбранные по оглавлению, не зависят от промптов генерации. В итерациях промптов
     поиск можно не повторять (~10 тыс. токенов на прогон), а версии промптов сравнивать на одних
-    и тех же разделах. Кеш действует, только если вопросы те же; пустой результат не сохраняется.
+    и тех же разделах. Кеш действует, если вопросы те же или их часть (перепроверка отдельных групп);
+    пустой результат не сохраняется.
     """
     import app.runner as runner
 
@@ -83,9 +84,11 @@ def use_picks_cache(path: Path) -> None:
 
     def cached(kb, questions, per_q=2):
         saved = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
-        if saved.get("questions") == questions:
+        known = saved.get("questions", {})
+        if questions and set(questions.values()) <= set(known.values()):
+            by_text = {known[qid]: picks for qid, picks in saved["picks"].items()}
             print(f"поиск: из кеша {path}")
-            return {qid: [tuple(p) for p in picks] for qid, picks in saved["picks"].items()}
+            return {qid: [tuple(p) for p in by_text[t]] for qid, t in questions.items() if t in by_text}
         picks = real_retrieve(kb, questions, per_q)
         if picks and llm.enabled:
             path.parent.mkdir(parents=True, exist_ok=True)

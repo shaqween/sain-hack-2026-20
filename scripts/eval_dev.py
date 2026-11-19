@@ -70,18 +70,48 @@ def validate(body: dict) -> dict:
         return {"http_status": e.code, "body": e.read().decode("utf-8", "replace")[:2000]}
 
 
+def use_picks_cache(path: Path) -> None:
+    """Подменить поиск в runner кешем на диске.
+
+    Разделы, выбранные по оглавлению, не зависят от промптов генерации. В итерациях промптов
+    поиск можно не повторять (~10 тыс. токенов на прогон), а версии промптов сравнивать на одних
+    и тех же разделах. Кеш действует, только если вопросы те же; пустой результат не сохраняется.
+    """
+    import app.runner as runner
+
+    real_retrieve = runner.retrieve_batch
+
+    def cached(kb, questions, per_q=2):
+        saved = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+        if saved.get("questions") == questions:
+            print(f"поиск: из кеша {path}")
+            return {qid: [tuple(p) for p in picks] for qid, picks in saved["picks"].items()}
+        picks = real_retrieve(kb, questions, per_q)
+        if picks and llm.enabled:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps({"questions": questions, "picks": picks}, ensure_ascii=False, indent=1),
+                            encoding="utf-8")
+            print(f"поиск: сохранён в {path}")
+        return picks
+
+    runner.retrieve_batch = cached
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Локальный прогон набора через конвейер /run")
     parser.add_argument("--data", default="local/dev.json", help="ответ getData (целиком или только dataset)")
     parser.add_argument("--groups", type=int, default=0, help="сколько групп взять (0 = весь набор)")
     parser.add_argument("--out", default="local/answers.json", help="куда сохранить ответы")
     parser.add_argument("--validate", action="store_true", help="отправить ответы в /case/4/validate")
+    parser.add_argument("--picks-cache", help="файл кеша поиска: для итераций промптов на тех же группах")
     args = parser.parse_args()
 
     payload = json.loads(Path(args.data).read_text(encoding="utf-8"))
     ds, ref = unwrap_get_data(payload)
     if args.groups:
         ds = limit_groups(ds, args.groups, ref)
+    if args.picks_cache:
+        use_picks_cache(Path(args.picks_cache))
 
     print(f"режим нейросети: {'real' if llm.enabled else 'stub'}; запросов: {len(ds['requests'])}")
     t0 = time.monotonic()

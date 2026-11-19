@@ -52,7 +52,7 @@ def _candidates(kb: KnowledgeBase, text: str, need_alt: bool) -> list[Section]:
     return out[: config.TOP_K + 1]
 
 
-#промпт
+# промпт
 SYSTEM = """Ты — модуль ответов сервиса Sain о сне. Ты пишешь ответы от имени вымышленных экспертов.
 
 ЖЁСТКИЕ ПРАВИЛА
@@ -136,7 +136,7 @@ def _build_messages(text: str, expert_ids: list[str], cands: list[Section], kb: 
     ]
 
 
-#заглушка (и запасной путь)
+# заглушка (и запасной путь)
 def _sentences(text: str) -> list[str]:
     parts = re.split(r"(?<=[.!?])\s+", text.strip())
     return [p.strip() for p in parts if len(p.strip()) > 20]
@@ -154,7 +154,7 @@ def _stub_reply(eid: str, is_attack: bool, main: Section, alt: Section) -> str:
     return f"{e['stub_open'].format(fact=fact)} {e['stub_steps'].format(step=step)}"
 
 
-#главный метод
+# главный метод
 def answer_group(kb: KnowledgeBase, text: str, expert_ids: list[str],
                  history: list[tuple[str, str]] | None = None, allow_llm: bool = True,
                  cands_override: list[Section] | None = None) -> GroupResult:

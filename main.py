@@ -54,14 +54,14 @@ def health() -> dict:
     }
 
 
-#экран 1: выбор эксперта
+# экран 1: выбор эксперта
 
 @app.get("/api/experts")
 def experts() -> list[dict]:
     return [public_card(eid) for eid in EXPERTS]
 
 
-#экран 2: разговор
+# экран 2: разговор
 
 class ChatIn(BaseModel):
     expert_id: str = Field(description="clinician | biohacker | nutritionist")
@@ -119,7 +119,7 @@ def chat(body: ChatIn) -> dict:
     return {"session_id": sid, "expert": public_card(body.expert_id), "reply": reply_view}
 
 
-#статьи (горячие ссылки ведут сюда)
+# статьи (горячие ссылки ведут сюда)
 
 @app.get("/api/articles")
 def articles() -> list[dict]:
@@ -159,7 +159,7 @@ def add_article(body: ArticleIn, authorization: str | None = Header(default=None
     return {"ok": True, "kb": state.kb.stats()}
 
 
-#онлайн-проверка и финал
+# онлайн-проверка и финал
 
 class RunRequest(BaseModel):
     case: int = Field(ge=1, le=4)

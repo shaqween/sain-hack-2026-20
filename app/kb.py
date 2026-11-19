@@ -42,7 +42,7 @@ class KnowledgeBase:
         self._avgdl = 1.0
         self.source = "empty"
 
-    #наполнение
+    # наполнение
     def load(self, articles: list[Article], source: str) -> None:
         with self._lock:
             self.articles = {a.article_id: a for a in articles}
@@ -58,7 +58,7 @@ class KnowledgeBase:
         self._docs, self._tf, self._df = [], [], Counter()
         for a in self.articles.values():
             for s in a.sections:
-                #заголовок статьи и раздела повторяем дважды
+                # заголовок статьи и раздела повторяем дважды
                 tokens = tokenize(f"{a.title} {s.title} {a.title} {s.title} {s.text}")
                 tf = Counter(tokens)
                 self._docs.append(s)
@@ -87,7 +87,7 @@ class KnowledgeBase:
         scores.sort(key=lambda x: -x[1])
         return scores[:k]
 
-    #справочное
+    # справочное
     def exists(self, article_id: str, section_id: str) -> bool:
         a = self.articles.get(article_id)
         return bool(a and any(s.section_id == section_id for s in a.sections))

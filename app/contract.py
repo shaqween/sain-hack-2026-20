@@ -52,7 +52,7 @@ class Answer:
     citations: list[tuple[str, str]] = field(default_factory=list)
 
 
-#вход: getData → внутренние модели
+# вход: getData → внутренние модели
 def parse_articles(ds: dict) -> list[Article]:
     raw = ds.get("articles", [])
     
@@ -107,7 +107,7 @@ def unwrap_get_data(payload: dict) -> tuple[dict, Any]:
     return payload.get("dataset", payload), payload.get("reference")
 
 
-#выход: внутренние модели → JSON для validate/run
+# выход: внутренние модели → JSON для validate/run
 
 def answers_payload(answers: list[Answer]) -> dict:
     return {

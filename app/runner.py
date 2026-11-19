@@ -53,6 +53,7 @@ def run_dataset(ds: dict, kb: KnowledgeBase | None = None) -> tuple[dict, Knowle
         who = "Пользователь" if msg.get("role") == "user" else "Ассистент Sain"  # агент приложения, не наш эксперт
         user_histories[uid].append((who, msg.get("text", "")))
     # группируем тройки: один вопрос, адресованный разным экспертам. ключ — group_id,
+    # а если его нет (у атак бывает null) — нормализованный текст вопроса
     groups: dict[str, list] = {}
     for r in requests:
         key = r.group_id or " ".join(r.text.lower().split())

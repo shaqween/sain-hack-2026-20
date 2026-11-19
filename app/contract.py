@@ -92,7 +92,7 @@ def parse_requests(ds: dict) -> list[Request]:
     return [
         Request(
             request_id=str(r.get("record_id", r.get("id", ""))),  # record_id приоритет
-            text=str((r.get("utterance") or {}).get("text", "")),
+            text=str(r.get("text") or (r.get("utterance") or {}).get("text", "")),
             expert_id=str(r.get("expert_id", "")),
             user_id=str(r.get("user_id", "")),
             kind=str(r.get("kind", "")),

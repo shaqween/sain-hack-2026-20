@@ -21,7 +21,7 @@ EXPERTS: dict[str, dict] = {
     "clinician": {
         "id": "clinician",
         "match": ["clinician", "клиниц", "сомнолог", "somnolog", "clinic", "doctor"],
-        "name": "Вера Ланская",
+        "name": "Вера",
         "role": "Сомнолог-клиницист",
         "tagline": "Спокойно и точно, с оговорками о силе доказательств",
         "card": {
@@ -45,7 +45,7 @@ EXPERTS: dict[str, dict] = {
     "biohacker": {
         "id": "biohacker",
         "match": ["биохак", "экспери", "biohack", "experiment"],
-        "name": "Макс Орлов",
+        "name": "Макс",
         "role": "Биохакер-экспериментатор",
         "tagline": "Энергично, через измерения и эксперименты из исследований",
         "card": {
@@ -70,7 +70,7 @@ EXPERTS: dict[str, dict] = {
     "nutritionist": {
         "id": "nutritionist",
         "match": ["нутрици", "питани", "здрав", "nutrition", "food"],
-        "name": "Нина Тимофеева",
+        "name": "Нина",
         "role": "Нутрициолог здравого смысла",
         "tagline": "Просто и тепло, через бытовые примеры",
         "card": {

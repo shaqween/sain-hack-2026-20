@@ -62,4 +62,3 @@ if args.live:
         headers={"Content-Type": "application/json", "Authorization": "Bearer " + config.HACK_TEAM_TOKEN})
     with urllib.request.urlopen(req, timeout=30) as r:
         print("live:", json.load(r))
-print("Не забудьте закоммитить data/extra_articles/ — содержимое контейнера пропадает при деплое.")

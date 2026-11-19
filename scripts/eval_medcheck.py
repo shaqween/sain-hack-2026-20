@@ -44,15 +44,17 @@ def load_dictionary(res: dict) -> list[tuple[str, re.Pattern]]:
     return rules
 
 
-def call_model(res: dict, text: str) -> tuple[dict | None, int]:
+def call_model(res: dict, text: str, json_mode: bool = True) -> tuple[dict | None, int]:
     prompt = res["prompt"]
-    body = json.dumps({
+    payload = {
         "model": config.LLM_MODEL,
         "messages": [{"role": "system", "content": prompt["text"]}, {"role": "user", "content": text}],
         "max_tokens": 1200,
         "temperature": prompt.get("temperature", 0),
-        "response_format": {"type": "json_object"},
-    }).encode()
+    }
+    if json_mode:  # у организаторов режим не описан; откалиброванная копия работала без него
+        payload["response_format"] = {"type": "json_object"}
+    body = json.dumps(payload).encode()
     req = urllib.request.Request(config.LLM_BASE_URL + "/chat/completions", data=body, method="POST",
                                  headers={"Authorization": "Bearer " + config.LLM_API_KEY,
                                           "Content-Type": "application/json"})
@@ -62,6 +64,7 @@ def call_model(res: dict, text: str) -> tuple[dict | None, int]:
                 resp = json.load(r)
             used = int((resp.get("usage") or {}).get("total_tokens", 0))
             content = resp["choices"][0]["message"].get("content") or ""
+            content = re.sub(r"^```(?:json)?\s*|\s*```$", "", content.strip())  # без режима JSON бывают ```
             try:
                 return json.loads(content, strict=False), used
             except json.JSONDecodeError:
@@ -97,6 +100,8 @@ def main() -> None:
     parser.add_argument("--texts", help="вместо ответов: файл с текстами по одному на строку")
     parser.add_argument("--lines", default="", help="номера строк файла --texts, например 1-6 или 1,3,5")
     parser.add_argument("--run", action="store_true", help="вызвать модель (без флага — только выбор, 0 токенов)")
+    parser.add_argument("--plain", action="store_true", help="без режима JSON — как откалиброванная копия")
+    parser.add_argument("--fresh", action="store_true", help="не брать вердикты из журнала")
     args = parser.parse_args()
 
     res = json.loads(Path(args.resources).read_text(encoding="utf-8"))
@@ -115,7 +120,7 @@ def main() -> None:
                 items.append((a["record_id"], a["text"]))
 
     done: dict[str, dict] = {}
-    if LOG.exists():
+    if LOG.exists() and not args.fresh:
         for line in LOG.read_text(encoding="utf-8").splitlines():
             rec = json.loads(line)
             if rec.get("category") not in (None, "?", "сбой"):
@@ -138,11 +143,11 @@ def main() -> None:
             if hit:
                 v = {"category": hit[0], "quote": hit[1], "layer": "словарь", "tokens": 0}
             else:
-                verdict, used = call_model(res, text)
+                verdict, used = call_model(res, text, json_mode=not args.plain)
                 total += used
                 verdict = verdict or {"category": "сбой", "quote": None}
                 v = {"category": verdict.get("category", "?"), "quote": verdict.get("quote"),
-                     "layer": "модель", "tokens": used}
+                     "layer": "модель", "mode": "plain" if args.plain else "json", "tokens": used}
             with LOG.open("a", encoding="utf-8") as f:
                 f.write(json.dumps({"label": label, "sha": sha, **v}, ensure_ascii=False) + "\n")
         counts[v["category"]] = counts.get(v["category"], 0) + 1

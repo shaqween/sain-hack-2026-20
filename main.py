@@ -143,7 +143,7 @@ def article(article_id: str) -> dict:
 
 
 class ArticleIn(BaseModel):
-    article: dict  # тот же формат, что у статьи в наборе (см. data/demo_base.json)
+    article: dict  # тот же формат, что у статьи в наборе (articles[] в getData)
 
 
 @app.post("/api/admin/articles")

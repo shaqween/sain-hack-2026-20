@@ -3,7 +3,7 @@
     python scripts/add_article.py path/to/article.json                       # в репозиторий (data/extra_articles)
     python scripts/add_article.py article.json --live https://team20.hack.be-healthy.tech  # ещё и в работающий сервер
 
-Формат файла — как у статьи в наборе (см. data/demo_base.json): id, title, license, sections[{id, title, text}].
+Формат файла — как у статьи в наборе (articles[] в getData): id, title, license, sections[{id, title, text}].
 Скрипт проверяет формат, кладёт файл в data/extra_articles/, перестраивает индекс и сразу задаёт
 эксперту вопрос по теме статьи — печатает время до первой ссылки на неё (это число — в README).
 """
@@ -22,7 +22,7 @@ os.environ.setdefault("LLM_MODE", "stub")
 from app import config  # noqa: E402
 from app.agent import answer_group  # noqa: E402
 from app.contract import parse_articles  # noqa: E402
-from app.kb import KnowledgeBase  # noqa: E402
+from app import state  # noqa: E402
 
 ap = argparse.ArgumentParser()
 ap.add_argument("file")
@@ -43,10 +43,9 @@ dst_dir = os.path.join(ROOT, "data", "extra_articles")
 os.makedirs(dst_dir, exist_ok=True)
 shutil.copy(args.file, os.path.join(dst_dir, f"{art.article_id}.json"))
 
+state.load_initial_base()  # та же база, что у сервера: dev-набор по токену и data/extra_articles
+kb = state.kb
 t0 = time.perf_counter()
-kb = KnowledgeBase()
-with open(os.path.join(ROOT, "data", "demo_base.json"), encoding="utf-8") as f:
-    kb.load(parse_articles(json.load(f)), "demo")
 kb.add_article(art)
 t_index = time.perf_counter() - t0
 q = args.question or f"{art.sections[0].title}: что об этом известно?"

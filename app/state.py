@@ -24,8 +24,8 @@ final_user: dict | None = None  # в финале getData отдаёт одно�
 
 
 def load_initial_base() -> None:
-    """Старт: dev-набор через API (если есть токен), иначе демо-база. Плюс data/extra_articles."""
-    source_articles, source = None, "demo"
+    """Старт: dev-набор через API (нужен HACK_TEAM_TOKEN) плюс статьи из data/extra_articles."""
+    source_articles, source = [], "empty"
     if config.HACK_TEAM_TOKEN:
         try:
             from .runner import fetch_dataset
@@ -33,10 +33,7 @@ def load_initial_base() -> None:
             ds, _ = unwrap_get_data(payload)
             source_articles, source = parse_articles(ds), "api:" + config.DEV_DATASET_CODE
         except Exception as e:
-            log.warning("не удалось загрузить dev-набор: %s — беру демо-базу", type(e).__name__)
-    if not source_articles:
-        with open(os.path.join(ROOT, "data", "demo_base.json"), encoding="utf-8") as f:
-            source_articles = parse_articles(json.load(f))
+            log.warning("не удалось загрузить dev-набор: %s — в базе только добавленные статьи", type(e).__name__)
     kb.load(source_articles, source)
     for path in sorted(glob.glob(os.path.join(ROOT, "data", "extra_articles", "*.json"))):
         with open(path, encoding="utf-8") as f:

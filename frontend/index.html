@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sain — Твой эксперт по сну</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        .pixel-art {
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: 'Manrope', sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- ГЕНЕРАТОР ПИКСЕЛЕЙ НА ФОНЕ --- */
+        .stars-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;
+        }
+        .star {
+            position: absolute; background: #B8DEE8; opacity: 0.6;
+        }
+        .star.cross::before, .star.cross::after { content: ''; position: absolute; background: inherit; }
+        .star.cross::before { width: 2px; height: 100%; left: 50%; transform: translateX(-50%); }
+        .star.cross::after { width: 100%; height: 2px; top: 50%; transform: translateY(-50%); }
+
+        /* --- ЭКРАН 1: ВЫБОР ЭКСПЕРТА --- */
+        #screen-selection {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .logo-container {
+            align-self: flex-start;
+            margin: 40px 50px;
+            position: relative;
+        }
+        .logo-top { 
+            font-size: 60px; 
+            font-weight: 800; 
+            letter-spacing: 2px;
+            position: relative;
+            z-index: 2;
+        }
+        .logo-pixel {
+            position: absolute; background: #fff; z-index: 1;
+        }
+        .lp-1 { width: 6px; height: 6px; top: -10px; left: 20px; }
+        .lp-2 { width: 4px; height: 4px; top: -20px; right: 40px; background: #B8DEE8;}
+        .lp-3 { width: 8px; height: 8px; bottom: -15px; left: 60px; }
+        .lp-4 { width: 5px; height: 5px; bottom: -5px; right: 10px; background: #F5A67B;}
+        .lp-5 { width: 3px; height: 3px; top: 10px; right: -15px; }
+        
+        .header-text { text-align: center; margin-top: -40px; margin-bottom: 30px; }
+        .header-text h1 { font-size: 44px; font-weight: 700; margin-bottom: 12px; }
+        .header-text p { font-size: 18px; color: #cccccc; }
+        
+        .cards-container { display: flex; gap: 30px; justify-content: center; padding: 0 20px; }
+        
+        .card {
+            width: 480px; height: 650px;
+            border-radius: 40px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.3s;
+            padding: 60px 30px 0 30px; 
+            background: linear-gradient(180deg, var(--color-light) 0%, rgba(26, 26, 26, 0.9) 100%);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden; 
+        }
+        .card:hover { transform: translateY(-10px); }
+        
+        .card-somnologist { --color-light: rgba(114, 179, 193, 0.8); --tag-bg: #B8DEE8; --tag-text: #1a2a35; --desc-color: #B8DEE8;}
+        .card-biohacker   { --color-light: rgba(196, 133, 107, 0.8); --tag-bg: #F5A67B; --tag-text: #3d1a10; --desc-color: #F5A67B;}
+        .card-nutritionist{ --color-light: rgba(149, 168, 92, 0.8); --tag-bg: #F5C5A0; --tag-text: #3d2010; --desc-color: #F5C5A0;}
+
+        .card-logo {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            object-fit: contain; z-index: 10;
+        }
+        .logo-astra { width: 340px; height: 140px; }
+        .logo-sol { width: 380px; height: 160px; }
+        .logo-noni { width: 300px; height: 120px; }
+
+        .tags { display: flex; flex-direction: row; flex-wrap: nowrap; justify-content: center; gap: 8px; margin-top: 60px; margin-bottom: 20px; z-index: 2; }
+        .tag { 
+            background: var(--tag-bg); 
+            color: var(--tag-text); 
+            padding: 6px 12px; 
+            border-radius: 20px; 
+            font-size: 13px; 
+            font-weight: 700; 
+            white-space: nowrap;
+        }
+        
+        .description { 
+            font-size: 16px; 
+            line-height: 1.5; 
+            text-align: center; 
+            color: var(--desc-color); 
+            opacity: 0.9;
+            margin-bottom: 10px; 
+            z-index: 2; 
+            padding: 0 10px; 
+        }
+        
+        .character-box {
+            width: 100%; position: absolute; bottom: 0; left: 0;
+            display: flex; justify-content: center; z-index: 3;
+            pointer-events: none; 
+            height: 400px;
+        }
+        .character-img {
+            height: 100%; 
+            object-fit: contain;
+            transition: opacity 0.3s;
+            position: absolute; bottom: -30px; 
+        }
+        
+        .img-default { opacity: 1; z-index: 4; }
+        .img-hover { opacity: 0; z-index: 5; }
+        .card:hover .img-default { opacity: 0; }
+        .card:hover .img-hover { opacity: 1; }
+
+        /* --- ЭКРАН 2: ЧАТ --- */
+        #screen-chat { display: none; height: 100vh; width: 100vw; position: absolute; top: 0; left: 0; z-index: 10;}
+        
+        .sidebar { width: 360px; height: 100%; background: #1a1a1a; position: absolute; left: 0; top: 0; padding: 30px 40px; display: flex; flex-direction: column; border-right: 1px solid #333; z-index: 10;}
+        .sidebar .logo { font-size: 56px; font-weight: 800; margin-bottom: 40px; }
+        
+        .back-btn { 
+            background: var(--btn-color); 
+            color: #b5e2f4; 
+            border: none;
+            padding: 14px 24px; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: 600; 
+            margin-bottom: 40px; 
+            width: fit-content;
+            display: flex; align-items: center; gap: 10px; 
+            font-family: 'Manrope', sans-serif;
+            transition: opacity 0.2s;
+        }
+        .back-btn:hover { opacity: 0.8; }
+        
+        .sidebar-section { margin-bottom: 30px; }
+        .sidebar-title { 
+            color: #999; font-size: 16px; font-weight: 500; margin-bottom: 15px; 
+            display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+        }
+        .sidebar-title svg { width: 16px; height: 16px; fill: #999; }
+        .sidebar-item { color: #fff; font-size: 15px; padding: 8px 0; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'Manrope', sans-serif;}
+        
+        .user-profile { margin-top: auto; position: relative; height: 100px; display: flex; align-items: center; }
+        .user-avatar { position: absolute; bottom: -40px; left: -40px; width: 300px; height: 300px; object-fit: contain; z-index: 20; }
+        .user-name { padding-left: 180px; font-size: 16px; color: #aaa;}
+
+        .chat-area { margin-left: 360px; height: 100%; display: flex; flex-direction: column; position: relative;}
+        
+        .bg-astra { background: linear-gradient(180deg, #B8DEE800 0%, #557c8e 100%); --btn-color: #72B3C1; --settings-color: #72B3C1;}
+        .bg-sol   { background: linear-gradient(180deg, #F1ECC600 0%, #a86b54 100%); --btn-color: #F5A67B; --settings-color: #F5A67B;}
+        .bg-noni  { background: linear-gradient(180deg, #CBF46F00 0%, #7a8e45 100%); --btn-color: #F5C5A0; --settings-color: #F5C5A0;}
+
+        .chat-header { padding: 24px 40px; display: flex; align-items: center; gap: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); position: relative;}
+        
+        .chat-header-avatar { width: 140px; height: 140px; object-fit: contain; }
+        .chat-header-info h2 { font-size: 36px; font-weight: 700; margin-bottom: 4px; text-transform: uppercase;}
+        .chat-header-info p { font-size: 20px; color: #ccc; }
+
+        .settings-btn {
+            position: absolute; right: 40px; top: 40px;
+            background: var(--settings-color); border: none; width: 60px; height: 60px;
+            border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .settings-btn svg { width: 35px; height: 35px; fill: #fff; }
+
+        .chat-messages { flex-grow: 1; padding: 40px; overflow-y: auto; display: flex; flex-direction: column; gap: 30px;}
+        
+        /* ИСПРАВЛЕНИЕ: min-width: 0 позволяет flex-элементу сжиматься */
+        .msg-wrapper { 
+            display: flex; 
+            flex-direction: column; 
+            max-width: 75%; 
+            min-width: 0;
+        }
+        .msg-wrapper.user { align-self: flex-end; align-items: flex-end; }
+        .msg-wrapper.expert { align-self: flex-start; align-items: flex-start; }
+
+        .msg-author { font-size: 15px; color: rgba(255,255,255,0.8); margin-bottom: 8px; font-weight: 600; text-transform: uppercase;}
+        
+        /* ИСПРАВЛЕНИЕ: перенос длинных слов и сохранение \n */
+        .message { 
+            padding: 20px 24px; 
+            border-radius: 30px; 
+            font-size: 16px; 
+            line-height: 1.5; 
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            white-space: pre-wrap;
+            max-width: 100%;
+        }
+        
+        .msg-user { background: #fdf5e6; color: #333; border-bottom-right-radius: 10px; }
+        
+        .theme-astra .msg-expert { background: #B8DEE8; color: #1a2a35; border-bottom-left-radius: 10px; }
+        .theme-sol .msg-expert { background: #F5A67B; color: #3d1a10; border-bottom-left-radius: 10px; }
+        .theme-noni .msg-expert { background: #F5C5A0; color: #3d2010; border-bottom-left-radius: 10px; }
+
+        .source-card { 
+            margin-top: 15px; 
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 16px; 
+            padding: 16px; 
+            font-size: 14px; 
+            color: #333; 
+            width: 100%; 
+            display: flex; flex-direction: column; gap: 5px;
+        }
+        .source-title { font-weight: 700; font-size: 15px;}
+        .source-link { color: #0056b3; text-decoration: none; font-weight: 600; display: inline-block;}
+        .source-link:hover { text-decoration: underline; }
+        
+        .chat-input-area { padding: 24px 40px 40px; z-index: 10;}
+        .input-wrapper { display: flex; background: #e6f0f5; border-radius: 40px; padding: 10px 12px; align-items: center; }
+        .input-wrapper input { flex-grow: 1; border: none; background: transparent; padding: 12px; font-size: 16px; outline: none; color: #333; font-family: 'Manrope', sans-serif;}
+        .send-btn { background: #f5d0b5; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 22px; color: #fff; display: flex; align-items: center; justify-content: center; }
+        .icon-btn { background: #f5d0b5; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-left: 10px;}
+        .icon-btn svg { width: 24px; height: 24px; fill: #fff; }
+
+    </style>
+</head>
+<body>
+
+    <div class="stars-container" id="stars"></div>
+
+    <!-- ЭКРАН 1 -->
+    <div id="screen-selection">
+        <div class="logo-container">
+            <div class="logo-top">SAIN</div>
+            <div class="logo-pixel lp-1"></div>
+            <div class="logo-pixel lp-2"></div>
+            <div class="logo-pixel lp-3"></div>
+            <div class="logo-pixel lp-4"></div>
+            <div class="logo-pixel lp-5"></div>
+        </div>
+
+        <div class="header-text">
+            <h1>Выбери своего эксперта.</h1>
+            <p>Три подхода. Одна научная база.</p>
+        </div>
+
+        <div class="cards-container">
+            <!-- АСТРА -->
+            <div class="card card-somnologist" onclick="startChat('clinician', 'Астра', 'Твой клиницист', 'astra_avatar.png', 'theme-astra', 'bg-astra')">
+                <img src="/static/astra_logo.png" class="card-logo logo-astra pixel-art" alt="АСТРА">
+                <div class="tags"><span class="tag">Спокойный</span><span class="tag">Рассудительный</span><span class="tag">Точный</span></div>
+                <div class="description">Объясняет подробно и взвешенно, опирается на доказанные факты и честно обозначает, где наука пока не дает однозначного ответа.</div>
+                <div class="character-box">
+                    <img src="/static/astra.png" class="character-img img-default pixel-art" alt="Астра">
+                    <img src="/static/astra_hover.png" class="character-img img-hover pixel-art" alt="Астра Hover">
+                </div>
+            </div>
+            
+            <!-- СОЛ -->
+            <div class="card card-biohacker" onclick="startChat('biohacker', 'Сол', 'Твой биохакер', 'sol_avatar.png', 'theme-sol', 'bg-sol')">
+                <img src="/static/sol_logo.png" class="card-logo logo-sol pixel-art" alt="СОЛ">
+                <div class="tags"><span class="tag">Энергичный</span><span class="tag">Любознательный</span><span class="tag">Научный</span></div>
+                <div class="description">Говорит коротко и по делу, находит интересные исследования и помогает разобраться, что действительно работает.</div>
+                <div class="character-box">
+                    <img src="/static/sol.png" class="character-img img-default pixel-art" alt="Сол">
+                    <img src="/static/sol_hover.png" class="character-img img-hover pixel-art" alt="Сол Hover">
+                </div>
+            </div>
+
+            <!-- НОНИ -->
+            <div class="card card-nutritionist" onclick="startChat('nutritionist', 'Нони', 'Твой нутрициолог', 'noni_avatar.png', 'theme-noni', 'bg-noni')">
+                <img src="/static/noni_logo.png" class="card-logo logo-noni pixel-art" alt="НОНИ">
+                <div class="tags"><span class="tag">Заботливый</span><span class="tag">Понятный</span><span class="tag">Дружелюбный</span></div>
+                <div class="description">Объясняет сложное простыми словами, приводит жизненные примеры и помогает выстраивать здоровые привычки без лишнего давления.</div>
+                <div class="character-box">
+                    <img src="/static/noni.png" class="character-img img-default pixel-art" alt="Нони">
+                    <img src="/static/noni_hover.png" class="character-img img-hover pixel-art" alt="Нони Hover">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 2: ЧАТ -->
+    <div id="screen-chat">
+        <div class="sidebar">
+            <div class="logo">SAIN</div>
+            <button class="back-btn" onclick="goBack()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Вернуться к выбору
+            </button>
+
+            <div class="sidebar-section">
+                <div class="sidebar-title">Недавнее <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
+                <div class="sidebar-item">Чат 1</div>
+            </div>
+
+            <div class="sidebar-section" id="sources-section">
+                <div class="sidebar-title">Источники <svg viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg></div>
+                <div id="sources-list"></div>
+            </div>
+
+            <div class="user-profile">
+                <img src="/static/user.png" class="user-avatar pixel-art" alt="User">
+                <span class="user-name">@username</span>
+            </div>
+        </div>
+
+        <div class="chat-area" id="chat-container">
+            <div class="chat-header">
+                <img id="chat-avatar" class="chat-header-avatar pixel-art" src="" alt="">
+                <div class="chat-header-info">
+                    <h2 id="chat-name">ИМЯ</h2>
+                    <p id="chat-role">Роль</p>
+                </div>
+                <button class="settings-btn">
+                    <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.06-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.73,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.49-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+                </button>
+            </div>
+
+            <div class="chat-messages" id="chat-box"></div>
+
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <input type="text" id="user-input" placeholder="Задай свой вопрос..." onkeypress="handleEnter(event)">
+                    <button class="send-btn" onclick="sendMessage()">➤</button>
+                    <button class="icon-btn">
+                        <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const starsContainer = document.getElementById('stars');
+        const numStars = 40;
+        for (let i = 0; i < numStars; i++) {
+            const star = document.createElement('div');
+            star.classList.add('star');
+            if (Math.random() > 0.8) star.classList.add('cross');
+            const size = Math.random() * 8 + 4;
+            star.style.width = size + 'px';
+            star.style.height = size + 'px';
+            
+            const side = Math.floor(Math.random() * 4);
+            if (side === 0) { star.style.top = Math.random() * 20 + '%'; star.style.left = Math.random() * 90 + 5 + '%'; }
+            else if (side === 1) { star.style.bottom = Math.random() * 20 + '%'; star.style.left = Math.random() * 90 + 5 + '%'; }
+            else if (side === 2) { star.style.top = Math.random() * 90 + 5 + '%'; star.style.left = Math.random() * 15 + '%'; }
+            else { star.style.top = Math.random() * 90 + 5 + '%'; star.style.right = Math.random() * 15 + '%'; }
+
+            starsContainer.appendChild(star);
+        }
+
+        const API_URL = window.location.origin.includes('127.0.0.1') ? 'http://127.0.0.1:8000' : 'https://team20.hack.be-healthy.tech';
+        let currentExpertId = "";
+        let sessionId = null;
+
+        function startChat(expertId, name, role, avatarImg, themeClass, bgClass) {
+            currentExpertId = expertId;
+            sessionId = null;
+            
+            document.getElementById('chat-name').innerText = name.toUpperCase();
+            document.getElementById('chat-role').innerText = role;
+            document.getElementById('chat-avatar').src = `/static/${avatarImg}`;
+            
+            document.getElementById('chat-box').innerHTML = '';
+            document.getElementById('sources-list').innerHTML = '';
+            
+            const container = document.getElementById('chat-container');
+            container.className = `chat-area ${themeClass} ${bgClass}`;
+            
+            addMessage(`Привет! ${name} на связи. Что тебя беспокоит?`, 'expert', []);
+
+            document.getElementById('screen-selection').style.display = 'none';
+            document.getElementById('screen-chat').style.display = 'block';
+        }
+
+        function goBack() {
+            document.getElementById('screen-chat').style.display = 'none';
+            document.getElementById('screen-selection').style.display = 'flex';
+        }
+
+        async function sendMessage() {
+            const inputEl = document.getElementById('user-input');
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            addMessage(text, 'user');
+            inputEl.value = '';
+
+            const loadingMsgId = 'loading-' + Date.now();
+            addMessage('...', 'expert', [], loadingMsgId);
+            scrollToBottom();
+
+            try {
+                const response = await fetch(`${API_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ expert_id: currentExpertId, message: text, session_id: sessionId })
+                });
+
+                if (!response.ok) throw new Error('Ошибка');
+                const data = await response.json();
+                
+                document.getElementById(loadingMsgId).remove();
+                if (data.session_id) sessionId = data.session_id;
+                
+                addMessage(data.reply.text, 'expert', data.reply.citations);
+
+                if (data.reply.citations) {
+                    data.reply.citations.forEach(c => addSourceItem(c));
+                }
+
+            } catch (error) {
+                document.getElementById(loadingMsgId).remove();
+                addMessage("Ошибка соединения с сервером.", 'expert');
+            }
+        }
+
+        function addMessage(text, sender, citations = [], id = null) {
+            const box = document.getElementById('chat-box');
+            const wrapper = document.createElement('div');
+            wrapper.className = `msg-wrapper ${sender}`;
+            if (id) wrapper.id = id;
+
+            if (sender === 'expert') {
+                const authorDiv = document.createElement('div');
+                authorDiv.className = 'msg-author';
+                authorDiv.innerText = document.getElementById('chat-name').innerText;
+                wrapper.appendChild(authorDiv);
+            }
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message msg-${sender}`;
+            // textContent сохраняет переносы строк (\n), которые отобразятся благодаря white-space: pre-wrap
+            msgDiv.textContent = text;
+            
+            if (citations && citations.length > 0) {
+                citations.forEach(c => {
+                    const card = document.createElement('div');
+                    card.className = 'source-card';
+                    const link = `${API_URL}${c.api_url}`;
+                    card.innerHTML = `
+                        <div class="source-title">${c.article_title}</div>
+                        <a href="${link}" target="_blank" class="source-link">Читать источник</a>
+                    `;
+                    msgDiv.appendChild(card);
+                });
+            }
+            
+            wrapper.appendChild(msgDiv);
+            box.appendChild(wrapper);
+            scrollToBottom();
+        }
+
+        function addSourceItem(citation) {
+            const list = document.getElementById('sources-list');
+            if (Array.from(list.children).some(el => el.innerText === citation.article_title)) return;
+
+            const div = document.createElement('div');
+            div.className = 'sidebar-item';
+            const link = `${API_URL}${citation.api_url}`;
+            div.innerHTML = `<a href="${link}" target="_blank" style="color:white; text-decoration:none;">${citation.article_title}</a>`;
+            list.appendChild(div);
+        }
+
+        function scrollToBottom() { const box = document.getElementById('chat-box'); box.scrollTop = box.scrollHeight; }
+        function handleEnter(e) { if (e.key === 'Enter') sendMessage(); }
+    </script>
+</body>
+</html>

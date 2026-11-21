@@ -13,6 +13,9 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 
 from app import config, state
 from app.agent import answer_group
@@ -36,10 +39,15 @@ def _startup() -> None:
 
 
 # служебное
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 @app.get("/")
-def root() -> dict:
-    return {"team": config.TEAM, "status": "ok", "service": "sain-case4"}
+def serve_frontend():
+    return FileResponse("frontend/index.html")
+
+#@app.get("/")
+#def root() -> dict:
+#    return {"team": config.TEAM, "status": "ok", "service": "sain-case4"}
 
 
 @app.get("/health")
